@@ -1,103 +1,235 @@
-# DeepL Translator Widget – WordPress Plugin
+# DeepL Translator Widget — WordPress Plugin
 
-Valós idejű DeepL fordítás shortcode-dal. Polylang-kompatibilis, cache-eléssel.
+> Instant DeepL-powered language switcher for WordPress. Translates page content in real-time via DOM manipulation — no page reload. Inline shortcode, flag + language code dropdown, full style editor in WP Admin. Polylang-compatible.
 
----
-
-## Telepítés
-
-1. Másold a `deepl-translator/` mappát a WordPress `wp-content/plugins/` könyvtárába
-2. Aktiváld az **Bővítmények** menüben
-3. Állítsd be: **Beállítások → DeepL Translator**
+![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue?logo=wordpress) ![PHP](https://img.shields.io/badge/PHP-8.0%2B-777BB4?logo=php) ![License](https://img.shields.io/badge/license-GPL--2.0-green)
 
 ---
 
-## Beállítás
+## Features
 
-| Mező | Leírás |
-|------|--------|
-| **DeepL API kulcs** | Ingyenes vagy Pro kulcs a [DeepL Pro](https://www.deepl.com/pro-api) oldaláról |
-| **Forrásnyelv** | Az oldal eredeti nyelve (pl. HU) |
-| **Célnyelvek** | Milyen nyelvekre fordítható az oldal |
-| **Cache időtartam** | Hány óráig tárolja a fordítást WordPress transient-ben (0 = nincs cache) |
-
-> **Ingyenes DeepL API kulcs** `:fx` végű, pl. `abc123:fx` — a plugin automatikusan felismeri és a `api-free.deepl.com` endpointot használja.
+- **Real-time translation** — page text is translated instantly without a page reload
+- **DeepL API** — uses the official DeepL REST API (Free and Pro keys supported)
+- **Inline shortcode** — place the widget anywhere: header, footer, sidebar, nav bar
+- **Flag + language code dropdown** — clean, compact UI with animated chevron
+- **Full style editor** — configure button and dropdown colors, borders, and border-radius directly in WP Admin, with a live preview
+- **Custom strings** — override UI text ("Translating…", "Error") and language names ("English" → "Angol") per installation
+- **Transient cache** — translations are cached in WordPress to minimize API calls
+- **Theme isolation** — `!important` CSS resets prevent theme styles from bleeding into the widget (tested with Blocksy)
+- **Polylang-compatible** — works alongside Polylang without conflicts
+- **Accessible** — proper `aria-*` attributes, `role="listbox"`, live region for status messages
 
 ---
 
-## Használat
+## Requirements
 
-### Shortcode szerkesztőben (Gutenberg / Classic Editor)
+- WordPress 5.8+
+- PHP 8.0+
+- A [DeepL API key](https://www.deepl.com/pro-api) (Free or Pro)
+
+---
+
+## Installation
+
+### Via WordPress Admin (recommended)
+
+1. Download the latest `deepl-translator.zip` from [Releases](../../releases)
+2. Go to **Plugins → Add New → Upload Plugin**
+3. Upload the zip file and click **Install Now**
+4. Click **Activate Plugin**
+5. Go to **Settings → DeepL Translator** and enter your API key
+
+### Manual (FTP / file manager)
+
+1. Unzip `deepl-translator.zip`
+2. Upload the `deepl-translator/` folder to `wp-content/plugins/`
+3. Activate via **Plugins** in WP Admin
+4. Configure at **Settings → DeepL Translator**
+
+---
+
+## Configuration
+
+### Settings → API & Languages
+
+| Field | Description |
+|---|---|
+| **DeepL API key** | Your DeepL key. Free keys end in `:fx` — the plugin detects this automatically and uses the correct endpoint. |
+| **Source language** | The original language of your site (e.g. `HU`) |
+| **Target languages** | Which languages visitors can switch to |
+| **Cache (hours)** | How long translations are stored in WordPress transients. `0` = no cache. |
+
+### Settings → Widget Style
+
+Customize every visual aspect of the widget without touching CSS:
+
+**Button**
+- Background color, text color, border color, border width, border radius
+- Hover background
+
+**Dropdown menu**
+- Background color, border color, border radius
+- Text color, muted text color (language name)
+- Row hover background
+- Active row background + active text color
+- Divider line color
+
+Changes are reflected instantly in the **live preview** panel. You can also set the preview background color to match your actual header for accurate testing.
+
+### Settings → Strings & Language Names
+
+Override any UI string or language display name without editing code:
+
+| Field | Default | Example override |
+|---|---|---|
+| Translating label | `⏳ Translating…` | `⏳ Fordítás...` |
+| Error message | `❌ Translation error` | `❌ Hiba` |
+| Aria label | `Language switcher` | `Nyelvválasztó` |
+| EN | `English` | `Angol` |
+| FR | `Français` | `Francia` |
+| … | … | … |
+
+Leave any field empty to keep the default.
+
+---
+
+## Usage
+
+### Shortcode (Gutenberg / Classic Editor)
 
 ```
 [deepl_translator]
 ```
 
-### PHP sablon fájlban
+### PHP template
 
 ```php
 <?php echo do_shortcode('[deepl_translator]'); ?>
 ```
 
-### Shortcode paraméterek
+### In a theme builder HTML widget (Blocksy, Elementor, Bricks…)
 
-| Paraméter | Leírás | Alapértelmezés |
-|-----------|--------|----------------|
-| `langs` | Vesszővel elválasztott célnyelvek | Admin beállítás |
-| `style` | `dropdown` vagy `flags` | `dropdown` |
-| `selector` | CSS selector a fordítandó területre | `.entry-content, main, article` |
-
-### Példák
+Paste the shortcode directly into an HTML widget field:
 
 ```
+[deepl_translator]
+```
+
+### Shortcode parameters
+
+| Parameter | Description | Default |
+|---|---|---|
+| `langs` | Comma-separated target language codes — overrides the admin setting | Admin setting |
+| `selector` | CSS selector for the content area to translate | `.entry-content, .page-content, main, article, #content` |
+
+### Examples
+
+```
+[deepl_translator]
 [deepl_translator langs="EN,FR,DE"]
-[deepl_translator style="flags"]
-[deepl_translator style="flags" langs="EN,FR" selector=".my-content"]
-[deepl_translator selector="#main-content, .sidebar-text"]
+[deepl_translator langs="EN,FR" selector=".my-content"]
+[deepl_translator selector="#main-content, .hero-text"]
 ```
 
 ---
 
-## Hogyan működik?
+## How it works
 
-1. A látogató a widgeten kiválaszt egy célnyelvet
-2. A plugin JavaScript-ből REST API hívást küld a WordPress backendnek
-3. A backend meghívja a DeepL API-t (és cache-eli az eredményt)
-4. A JS a DOM szövegcsomópontjait lecseréli a fordítással — **oldal-újratöltés nélkül**
-5. Az "Eredeti" gombra kattintva minden visszaáll az eredeti szövegre
+```
+Visitor clicks a language
+        ↓
+JS sends POST → /wp-json/deepl-translator/v1/translate
+        ↓
+PHP checks WordPress transient cache
+        ↓ cache miss
+DeepL API called → translations returned & cached
+        ↓
+JS replaces DOM text nodes in-place (no reload)
+        ↓
+Switching back to original restores text from memory snapshot
+```
 
-### Cache-elés
-- WordPress Transient API-t használ
-- Cache kulcs = MD5(célnyelv + összes fordított szöveg)
-- Tartalom mentésekor (`save_post`) automatikusan törlődik az összes deepl cache
+- Text nodes are collected via `TreeWalker` — `<script>`, `<style>`, `<code>`, and `<pre>` tags are skipped automatically
+- Subsequent switches to a previously translated language use the JS-side in-memory cache (zero API calls)
+- The transient cache is flushed automatically whenever any post is saved
 
 ---
 
-## Korlátok
+## Supported languages
 
-- **DeepL Free API**: havonta 500 000 karakter ingyenesen
-- A plugin szöveg csomópontokat fordít — a HTML attribútumokat (pl. `alt`, `placeholder`) nem
-- SEO szempontból a tartalom keresőknek továbbra is az eredeti nyelven jelenik meg (ez DOM-csere, nem SSR)
+| Code | Language | Code | Language |
+|---|---|---|---|
+| EN | English | PL | Polish |
+| DE | German | PT | Portuguese |
+| FR | French | RU | Russian |
+| ES | Spanish | JA | Japanese |
+| IT | Italian | ZH | Chinese |
+| NL | Dutch | | |
 
 ---
 
-## Fájlszerkezet
+## File structure
 
 ```
 deepl-translator/
-└── deepl-translator.php    # Fő plugin fájl (admin UI + REST API + shortcode + CSS)
+├── deepl-translator.php   # Main plugin file (admin + REST API + shortcode + CSS)
 └── README.md
 ```
 
 ---
 
+## DeepL API limits
+
+| Plan | Characters / month | Cost |
+|---|---|---|
+| Free | 500,000 | Free |
+| Pro | Unlimited | Pay-as-you-go |
+
+Get your key at [deepl.com/pro-api](https://www.deepl.com/pro-api).
+
+---
+
+## FAQ
+
+**Does it work with page builders (Elementor, Bricks, Divi)?**
+Yes. Use the `selector` parameter to target the specific content container your builder outputs.
+
+**Does it affect SEO?**
+No. Translation is client-side DOM manipulation — search engines see only the original language.
+
+**Can I use it alongside Polylang?**
+Yes. The plugin does not interfere with Polylang's URL-based language switching.
+
+**My theme's styles are breaking the dropdown.**
+The plugin uses `!important` on all widget CSS to prevent this. If issues persist, check whether your theme injects styles via JavaScript after page load.
+
+**How do I clear the translation cache?**
+Save any post or page — this triggers a full cache flush. You can also set cache hours to `0` to disable caching entirely.
+
+---
+
 ## Changelog
 
+### 1.1.0
+- Admin style editor with live preview (button + dropdown colors, borders, radius)
+- Strings & Language Names panel in admin (override UI text and language names without code changes)
+- `!important` CSS isolation for theme builder compatibility (Blocksy, etc.)
+- Full English admin UI
+- Fixed DeepL API request body format (`text` array was incorrectly nested as objects)
+
 ### 1.0.0
-- Kezdeti kiadás
-- DeepL REST API integráció
-- Shortcode: `[deepl_translator]`
-- Dropdown és zászló stílus
-- WordPress Transient cache
-- Dark mode támogatás
-- Cache törlés tartalom mentésekor
+- Initial release
+- DeepL REST API integration with Free/Pro auto-detection
+- `[deepl_translator]` shortcode
+- Flag + language code dropdown with animated chevron
+- WordPress Transient cache with `save_post` flush
+
+---
+
+## License
+
+[GPL-2.0](https://www.gnu.org/licenses/gpl-2.0.html)
+
+---
+
+Built by [nstudio.hu](https://nstudio.hu)
